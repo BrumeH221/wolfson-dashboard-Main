@@ -1,0 +1,22 @@
+{
+  "name": "Wolfson Minimal",
+  "visualStyles": {
+    "*": {
+      "*": {
+        "title": [
+          {
+            "show": true,
+            "fontFamily": "Segoe UI",
+            "fontSize": 12
+          }
+        ],
+        "labels": [
+          {
+            "fontFamily": "Segoe UI",
+            "fontSize": 10
+          }
+        ]
+      }
+    }
+  }
+}

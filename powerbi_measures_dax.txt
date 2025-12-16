@@ -1,0 +1,69 @@
+-- =========================
+-- Wolfson Dashboard Measures
+-- Table name assumed: 'FactOrders'
+-- Date table: 'DimDate' with column [Date]
+-- =========================
+
+Net Revenue (GBP) = SUM ( FactOrders[net_revenue_gbp] )
+
+Orders = DISTINCTCOUNT ( FactOrders[boss_order_id] )
+
+AOV (GBP) = DIVIDE ( [Net Revenue (GBP)], [Orders] )
+
+Order Total (GBP) = SUM ( FactOrders[Order Total (GBP)] )
+
+Refund (GBP) = SUM ( FactOrders[Refund (GBP)] )
+
+Refund Rate = DIVIDE ( [Refund (GBP)], [Order Total (GBP)] )
+
+Net Sale Less Refund (GBP) = SUM ( FactOrders[Net sale less refund (GBP)] )
+
+Coupon Orders = CALCULATE ( [Orders], FactOrders[has_coupon] = TRUE() )
+
+Coupon Usage % = DIVIDE ( [Coupon Orders], [Orders] )
+
+Net Revenue (Coupon) = CALCULATE ( [Net Revenue (GBP)], FactOrders[has_coupon] = TRUE() )
+
+Net Revenue (No Coupon) = CALCULATE ( [Net Revenue (GBP)], FactOrders[has_coupon] = FALSE() )
+
+AOV (Coupon) = DIVIDE ( [Net Revenue (Coupon)], [Coupon Orders] )
+
+AOV (No Coupon) =
+VAR NoCouponOrders = CALCULATE ( [Orders], FactOrders[has_coupon] = FALSE() )
+RETURN DIVIDE ( [Net Revenue (No Coupon)], NoCouponOrders )
+
+Weighted Avg Discount Rate =
+DIVIDE (
+    SUMX ( FactOrders, FactOrders[Discount_rate] * FactOrders[Order Total (GBP)] ),
+    [Order Total (GBP)]
+)
+
+Estimated Discount Spend (GBP) =
+SUMX ( FactOrders, FactOrders[Order Total (GBP)] * FactOrders[Discount_rate] )
+
+YoY Net Revenue % =
+VAR PrevYear = CALCULATE ( [Net Revenue (GBP)], SAMEPERIODLASTYEAR ( DimDate[Date] ) )
+RETURN DIVIDE ( [Net Revenue (GBP)] - PrevYear, PrevYear )
+
+-- Known customers (Customer_ID not blank)
+Known Customers =
+CALCULATE (
+    DISTINCTCOUNT ( FactOrders[Customer_ID] ),
+    NOT ( ISBLANK ( FactOrders[Customer_ID] ) )
+)
+
+Customer ID Coverage % =
+DIVIDE (
+    CALCULATE ( [Orders], NOT ( ISBLANK ( FactOrders[Customer_ID] ) ) ),
+    [Orders]
+)
+
+Repeat Orders (Known) =
+CALCULATE (
+    [Orders],
+    NOT ( ISBLANK ( FactOrders[Customer_ID] ) ),
+    FactOrders[New/ Repeat Customer] = "Repeat"
+)
+
+Repeat Rate (Known) =
+DIVIDE ( [Repeat Orders (Known)], CALCULATE ( [Orders], NOT ( ISBLANK ( FactOrders[Customer_ID] ) ) ) )
