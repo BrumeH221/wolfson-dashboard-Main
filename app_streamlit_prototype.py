@@ -4,128 +4,242 @@ import streamlit as st
 import plotly.express as px
 from pathlib import Path
 
+# =========================
+# Page config
+# =========================
 st.set_page_config(
     page_title="Wolfson Brands Dashboard",
     layout="wide",
-    initial_sidebar_state="expanded",  # cố gắng mở sidebar mặc định
+    initial_sidebar_state="expanded",
 )
 
 # =========================
-# Styling (Light + Professional + keep sidebar toggle)
+# Theme (Auto / Light / Dark)
+#   - Auto: theo nền máy (prefers-color-scheme)
 # =========================
-st.markdown(
+with st.sidebar.expander("⚙️ Display settings", expanded=False):
+    theme_mode = st.selectbox("Theme", ["Auto", "Light", "Dark"], index=0, key="ui_theme_mode")
+
+def _css_tokens_light() -> str:
+    return """
+    :root{
+      color-scheme: light;
+      --bg:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --sidebar:#fafafa;
+      --border:#d1d5db;
+      --border_soft:#e5e7eb;
+      --thead:#f9fafb;
+      --plot_grid: rgba(0,0,0,0.10);
+      --plot_line: rgba(0,0,0,0.55);
+    }
     """
+
+def _css_tokens_dark() -> str:
+    return """
+    :root{
+      color-scheme: dark;
+      --bg:#0b1220;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --card:#0f172a;
+      --sidebar:#0b1220;
+      --border:rgba(255,255,255,0.18);
+      --border_soft:rgba(255,255,255,0.12);
+      --thead:rgba(255,255,255,0.06);
+      --plot_grid: rgba(255,255,255,0.10);
+      --plot_line: rgba(255,255,255,0.55);
+    }
+    """
+
+def inject_css(mode: str = "Auto"):
+    # Auto = dùng media query theo nền máy (Windows/macOS/browser)
+    if mode == "Auto":
+        tokens = _css_tokens_light() + """
+        @media (prefers-color-scheme: dark){
+        """ + _css_tokens_dark() + """
+        }
+        """
+    elif mode == "Dark":
+        tokens = _css_tokens_dark()
+    else:
+        tokens = _css_tokens_light()
+
+    st.markdown(
+        f"""
 <style>
-:root { color-scheme: light; }
+{tokens}
 
-/* Force light background + readable dark text */
-html, body, [data-testid="stAppViewContainer"], .stApp {
-  background: #ffffff !important;
-  color: #111827 !important;
-}
+/* Base */
+html, body, [data-testid="stAppViewContainer"], .stApp {{
+  background: var(--bg) !important;
+  color: var(--text) !important;
+}}
+/* Make sure text is not faded */
+h1,h2,h3,h4,h5,h6, p, span, label, small, div {{
+  color: var(--text);
+  opacity: 1 !important;
+}}
+[data-testid="stMarkdownContainer"] {{
+  color: var(--text) !important;
+  opacity: 1 !important;
+}}
 
-/* Hide menu/footer only (DO NOT hide header, so sidebar toggle still works) */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
+/* Hide Streamlit menu/footer only (keep header for sidebar toggle) */
+#MainMenu {{visibility: hidden;}}
+footer {{visibility: hidden;}}
 
-/* Reduce top padding */
-.block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
+/* Reduce padding */
+.block-container {{ padding-top: 1.2rem; padding-bottom: 2rem; }}
 
-/* Sidebar styling */
-section[data-testid="stSidebar"] {
-  background: #fafafa !important;
-  border-right: 1px solid #e5e7eb;
-}
-section[data-testid="stSidebar"] * { color: #111827 !important; }
+/* Sidebar */
+section[data-testid="stSidebar"] {{
+  background: var(--sidebar) !important;
+  border-right: 1px solid var(--border_soft) !important;
+}}
+section[data-testid="stSidebar"] * {{
+  color: var(--text) !important;
+}}
 
 /* Header card */
-.report-header {
-  border: 1px solid #d1d5db;
+.report-header {{
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px 18px;
-  background: #ffffff;
+  background: var(--card);
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   gap: 12px;
   margin-bottom: 14px;
-}
-.report-company { font-size: 14px; font-weight: 650; letter-spacing: .3px; color: #374151; }
-.report-title { font-size: 26px; font-weight: 850; color: #111827; line-height: 1.1; margin-top: 2px; }
-.report-sub { font-size: 13px; color: #6b7280; margin-top: 6px; }
-.report-meta { text-align: right; font-size: 13px; color: #374151; }
-.report-meta .pill {
+}}
+.report-company {{ font-size: 14px; font-weight: 650; letter-spacing: .3px; color: var(--muted) !important; }}
+.report-title {{ font-size: 26px; font-weight: 850; color: var(--text) !important; line-height: 1.1; margin-top: 2px; }}
+.report-sub {{ font-size: 13px; color: var(--muted) !important; margin-top: 6px; }}
+.report-meta {{ text-align: right; font-size: 13px; color: var(--muted) !important; }}
+.report-meta .pill {{
   display: inline-block;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 6px 10px;
-  background: #f9fafb;
-}
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+}}
 
 /* KPI boxes */
-div[data-testid="stMetric"] {
-  background: #ffffff;
-  border: 1px solid #d1d5db;      /* mảnh nhưng rõ */
+div[data-testid="stMetric"] {{
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 12px 14px;
-}
-div[data-testid="stMetric"] * { color: #111827 !important; }
+}}
+div[data-testid="stMetric"] * {{ color: var(--text) !important; }}
 
 /* Chart + dataframe borders */
-div[data-testid="stPlotlyChart"], div[data-testid="stDataFrame"], div[data-testid="stTable"] {
-  background: #ffffff;
-  border: 1px solid #d1d5db;      /* mảnh nhưng rõ */
+div[data-testid="stPlotlyChart"],
+div[data-testid="stDataFrame"],
+div[data-testid="stTable"] {{
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 10px 12px;
-}
+}}
 
-/* Dataframe header row look */
-div[data-testid="stDataFrame"] thead tr th {
-  background: #f9fafb !important;
-  border-bottom: 1px solid #e5e7eb !important;
-}
+/* Dataframe: force readable table in both themes */
+div[data-testid="stDataFrame"] * {{
+  color: var(--text) !important;
+}}
+div[data-testid="stDataFrame"] table {{
+  background: var(--card) !important;
+}}
+div[data-testid="stDataFrame"] thead tr th {{
+  background: var(--thead) !important;
+  border-bottom: 1px solid var(--border_soft) !important;
+}}
+div[data-testid="stDataFrame"] tbody tr td {{
+  background: var(--card) !important;
+  border-bottom: 1px solid var(--border_soft) !important;
+}}
 
-/* Make selects look clean (fix black dropdowns if any) */
-div[data-baseweb="select"] > div{
-  background: #ffffff !important;
-  border: 1px solid #d1d5db !important;
+/* Selects look clean */
+div[data-baseweb="select"] > div {{
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 10px !important;
-}
-div[data-baseweb="select"] *{ color: #111827 !important; }
+}}
+div[data-baseweb="select"] * {{ color: var(--text) !important; }}
 
 /* Tabs polish */
-button[data-baseweb="tab"] {
+button[data-baseweb="tab"] {{
   font-size: 14px !important;
   padding: 10px 12px !important;
-}
+}}
+button[data-baseweb="tab"] * {{
+  color: var(--text) !important;
+  opacity: 1 !important;
+}}
 </style>
 """,
-    unsafe_allow_html=True,
-)
+        unsafe_allow_html=True,
+    )
 
+inject_css(theme_mode)
+
+# =========================
+# Plotly styling
+# =========================
 PLOTLY_CONFIG = {"displayModeBar": False, "responsive": True}
 
+def get_is_dark(mode: str) -> bool:
+    if mode == "Dark":
+        return True
+    if mode == "Light":
+        return False
+    # Auto: best-effort follow Streamlit theme base if set, otherwise light
+    base = (st.get_option("theme.base") or "light").lower()
+    return base == "dark"
+
+IS_DARK = get_is_dark(theme_mode)
+
 def style_fig(fig, title: str | None = None):
-    """Thin-but-clear frames and grids."""
+    if IS_DARK:
+        template = "plotly_dark"
+        paper = "#0f172a"
+        plot = "#0f172a"
+        font = "#e5e7eb"
+        line = "rgba(255,255,255,0.55)"
+        grid = "rgba(255,255,255,0.10)"
+    else:
+        template = "plotly_white"
+        paper = "white"
+        plot = "white"
+        font = "#111827"
+        line = "rgba(0,0,0,0.55)"
+        grid = "rgba(0,0,0,0.10)"
+
     fig.update_layout(
-        template="plotly_white",
-        paper_bgcolor="white",
-        plot_bgcolor="white",
+        template=template,
+        paper_bgcolor=paper,
+        plot_bgcolor=plot,
         margin=dict(l=12, r=12, t=46, b=12),
-        title=dict(text=title or "", x=0.01, xanchor="left"),
-        font=dict(size=13, color="#111827"),
+        title=dict(text=title or "", x=0.01, xanchor="left", font=dict(color=font)),
+        font=dict(size=13, color=font),
+        legend=dict(title=None),
     )
     fig.update_xaxes(
-        showline=True, linewidth=1.1, linecolor="rgba(0,0,0,0.55)",
-        mirror=True,
+        showline=True, linewidth=1.1, linecolor=line, mirror=True,
         ticks="outside", ticklen=4, tickwidth=1,
-        showgrid=True, gridwidth=0.7, gridcolor="rgba(0,0,0,0.10)"
+        showgrid=True, gridwidth=0.7, gridcolor=grid,
+        tickfont=dict(color=font),
+        titlefont=dict(color=font),
     )
     fig.update_yaxes(
-        showline=True, linewidth=1.1, linecolor="rgba(0,0,0,0.55)",
-        mirror=True,
+        showline=True, linewidth=1.1, linecolor=line, mirror=True,
         ticks="outside", ticklen=4, tickwidth=1,
-        showgrid=True, gridwidth=0.7, gridcolor="rgba(0,0,0,0.10)"
+        showgrid=True, gridwidth=0.7, gridcolor=grid,
+        tickfont=dict(color=font),
+        titlefont=dict(color=font),
     )
     return fig
 
@@ -149,7 +263,7 @@ def load_optional(name: str):
 # =========================
 df = load_optional("monthly_aggregates.csv")
 if df is None:
-    st.error("Không tìm thấy monthly_aggregates.csv trong cùng thư mục với app_streamlit_prototype.py")
+    st.error("Không tìm thấy monthly_aggregates.csv trong cùng thư mục với app.")
     st.stop()
 
 # =========================
@@ -197,7 +311,7 @@ if has_coupon != "All" and "has_coupon" in f.columns:
     f = f[f["has_coupon"] == has_coupon]
 
 # =========================
-# Report header (top of page)
+# Report header
 # =========================
 st.markdown(
     f"""
@@ -266,13 +380,12 @@ with tabs[0]:
     c5.metric("Refund Rate", f"{refund_rate:.2%}" if pd.notna(refund_rate) else "—")
     c6.metric("Coupon Usage", f"{coupon_usage:.2%}" if pd.notna(coupon_usage) else "—")
 
-    by_ym = f.groupby("YearMonth", as_index=False).agg(
-        net_revenue=("net_revenue_gbp", "sum"),
-        orders=("orders", "sum"),
-    ).sort_values("YearMonth")
-
-    fig = style_fig(px.line(by_ym, x="YearMonth", y="net_revenue", markers=True),
-                    "Net Revenue Trend (by Month)")
+    by_ym = (
+        f.groupby("YearMonth", as_index=False)
+        .agg(net_revenue=("net_revenue_gbp", "sum"), orders=("orders", "sum"))
+        .sort_values("YearMonth")
+    )
+    fig = style_fig(px.line(by_ym, x="YearMonth", y="net_revenue", markers=True), "Net Revenue Trend (by Month)")
     st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t0_line_netrev_by_ym")
 
     left, right = st.columns(2)
@@ -284,8 +397,7 @@ with tabs[0]:
                 .sort_values("net_revenue", ascending=False)
                 .head(10)
             )
-            fig = style_fig(px.bar(top_brand, x="Brands", y="net_revenue"),
-                            "Top 10 Brands (Net Revenue)")
+            fig = style_fig(px.bar(top_brand, x="Brands", y="net_revenue"), "Top 10 Brands (Net Revenue)")
             st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t0_bar_top_brand")
         else:
             st.info("Thiếu cột Brands trong monthly_aggregates.csv")
@@ -298,8 +410,7 @@ with tabs[0]:
                 .sort_values("net_revenue", ascending=False)
                 .head(15)
             )
-            fig = style_fig(px.bar(top_country, x="shipping_country", y="net_revenue"),
-                            "Top Countries (Net Revenue)")
+            fig = style_fig(px.bar(top_country, x="shipping_country", y="net_revenue"), "Top Countries (Net Revenue)")
             st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t0_bar_top_country")
         else:
             st.info("Thiếu cột shipping_country trong monthly_aggregates.csv")
@@ -328,14 +439,16 @@ with tabs[1]:
             .sort_values("net_revenue", ascending=False)
             .head(15)
         )
-        fig = style_fig(px.bar(by_pay, x="campaign_type_clean", y="net_revenue"),
-                        "Net Revenue by Campaign Type (Top 15)")
+        fig = style_fig(px.bar(by_pay, x="campaign_type_clean", y="net_revenue"), "Net Revenue by Campaign Type (Top 15)")
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t1_bar_netrev_by_campaign")
 
     if "refund_rate" in f.columns:
-        by_ym2 = f.groupby("YearMonth", as_index=False).agg(refund_rate=("refund_rate", "mean")).sort_values("YearMonth")
-        fig = style_fig(px.line(by_ym2, x="YearMonth", y="refund_rate", markers=True),
-                        "Refund Rate Trend (by Month)")
+        by_ym2 = (
+            f.groupby("YearMonth", as_index=False)
+            .agg(refund_rate=("refund_rate", "mean"))
+            .sort_values("YearMonth")
+        )
+        fig = style_fig(px.line(by_ym2, x="YearMonth", y="refund_rate", markers=True), "Refund Rate Trend (by Month)")
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t1_line_refund_rate_by_ym")
 
 # ------------------ TAB 3 ------------------
@@ -365,8 +478,7 @@ with tabs[2]:
             .sort_values("net_revenue", ascending=False)
             .head(15)
         )
-        fig = style_fig(px.bar(top_campaign, x="campaign_type_clean", y="net_revenue"),
-                        "Top Campaign Types (Net Revenue)")
+        fig = style_fig(px.bar(top_campaign, x="campaign_type_clean", y="net_revenue"), "Top Campaign Types (Net Revenue)")
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t2_bar_netrev_by_campaign")
 
     if "has_coupon" in f.columns and "orders" in f.columns:
@@ -384,8 +496,7 @@ with tabs[2]:
             .sort_values("YearMonth")
         )
         usage["coupon_usage"] = usage["coupon_orders"] / usage["orders"].replace(0, np.nan)
-        fig = style_fig(px.line(usage, x="YearMonth", y="coupon_usage", markers=True),
-                        "Coupon Usage Rate (by Month)")
+        fig = style_fig(px.line(usage, x="YearMonth", y="coupon_usage", markers=True), "Coupon Usage Rate (by Month)")
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t2_line_coupon_usage_by_ym")
 
 # =========================
@@ -451,6 +562,7 @@ with tabs[3]:
         k4.metric("Avg Frequency", f"{avg_f:.2f}" if pd.notna(avg_f) else "—")
 
         left, right = st.columns(2)
+
         with left:
             if seg_col and "monetary" in rf.columns and cust_col:
                 seg_sum = (
@@ -458,46 +570,45 @@ with tabs[3]:
                     .agg(customers=(cust_col, "nunique"), monetary=("monetary", "sum"))
                     .sort_values("monetary", ascending=False)
                 )
-                fig = style_fig(px.bar(seg_sum, x=seg_col, y="monetary", hover_data=["customers"]),
-                                "Total Monetary by Segment")
+                fig = style_fig(px.bar(seg_sum, x=seg_col, y="monetary", hover_data=["customers"]), "Total Monetary by Segment")
                 st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="rfm_bar")
 
-with right:
-    if seg_col and clu_col and cust_col:
-        seg_cluster = (
-            rf.groupby([seg_col, clu_col], as_index=False)
-              .agg(customers=(cust_col, "nunique"))
-        )
+        # ✅ REPLACED TREEMAP → STACKED BAR (easier to read)
+        with right:
+            if seg_col and clu_col and cust_col:
+                seg_cluster = (
+                    rf.groupby([seg_col, clu_col], as_index=False)
+                    .agg(customers=(cust_col, "nunique"))
+                )
 
-        # Sort segments by total customers (to make chart easier to read)
-        seg_order = (
-            seg_cluster.groupby(seg_col, as_index=False)["customers"]
-                       .sum()
-                       .sort_values("customers", ascending=False)[seg_col]
-                       .tolist()
-        )
-        seg_cluster[seg_col] = pd.Categorical(seg_cluster[seg_col], categories=seg_order, ordered=True)
-        seg_cluster = seg_cluster.sort_values(seg_col)
+                # sort segments by total customers
+                seg_order = (
+                    seg_cluster.groupby(seg_col, as_index=False)["customers"]
+                    .sum()
+                    .sort_values("customers", ascending=False)[seg_col]
+                    .tolist()
+                )
+                seg_cluster[seg_col] = pd.Categorical(seg_cluster[seg_col], categories=seg_order, ordered=True)
+                seg_cluster = seg_cluster.sort_values(seg_col)
 
-        # Stacked bar: Customers by Segment split by Cluster
-        fig = px.bar(
-            seg_cluster,
-            y=seg_col,
-            x="customers",
-            color=clu_col,
-            orientation="h",
-            barmode="stack",
-            text="customers",
-        )
-        fig = style_fig(fig, "Customers by Segment (split by Cluster)")
-        fig.update_traces(textposition="inside", insidetextanchor="middle")
-        st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="rfm_seg_cluster_bar")
-
+                fig = px.bar(
+                    seg_cluster,
+                    y=seg_col,
+                    x="customers",
+                    color=clu_col,
+                    orientation="h",
+                    barmode="stack",
+                    text="customers",
+                )
+                fig = style_fig(fig, "Customers by Segment (split by Cluster)")
+                fig.update_traces(textposition="inside", insidetextanchor="middle")
+                st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="rfm_seg_cluster_bar")
+            else:
+                st.info("Thiếu cột RFM_Segment / kmeans_cluster / Customer_ID trong rfm_customer_table.csv")
 
         if "recency_days" in rf.columns and "monetary" in rf.columns and len(rf) > 0:
             sample = rf.sample(min(len(rf), 5000), random_state=42)
-            fig = style_fig(px.scatter(sample, x="recency_days", y="monetary"),
-                            "Recency vs Monetary (sample)")
+            fig = style_fig(px.scatter(sample, x="recency_days", y="monetary"), "Recency vs Monetary (sample)")
             st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="rfm_scatter")
 
         st.markdown("### Target list")
@@ -521,8 +632,7 @@ with tabs[4]:
 
         if "sku" in sku_summary.columns and "revenue_alloc_gbp" in sku_summary.columns:
             top_skus = sku_summary.sort_values("revenue_alloc_gbp", ascending=False).head(topn)
-            fig = style_fig(px.bar(top_skus, x="sku", y="revenue_alloc_gbp"),
-                            f"Top {topn} SKUs (Revenue Allocated, GBP)")
+            fig = style_fig(px.bar(top_skus, x="sku", y="revenue_alloc_gbp"), f"Top {topn} SKUs (Revenue Allocated, GBP)")
             st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="sku_bar")
             st.dataframe(top_skus, use_container_width=True)
 
@@ -536,7 +646,7 @@ with tabs[4]:
                     float(sku_rules["support"].max()),
                     float(np.quantile(sku_rules["support"], 0.5)),
                     step=0.0001,
-                    key="min_support"
+                    key="min_support",
                 )
             with c2:
                 min_conf = st.slider("Min confidence", 0.0, 1.0, 0.2, step=0.05, key="min_conf")
@@ -557,14 +667,14 @@ with tabs[4]:
                     size="pair_order_count",
                     hover_data=["antecedent", "consequent", "support", "pair_order_count"],
                 ),
-                "Association Rules (Confidence vs Lift)"
+                "Association Rules (Confidence vs Lift)",
             )
             st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="rules_scatter")
 
             sku_pick = st.selectbox(
                 "Drill-down SKU",
                 options=sorted(pd.unique(pd.concat([sku_rules["antecedent"], sku_rules["consequent"]]).dropna()).tolist()),
-                key="sku_pick"
+                key="sku_pick",
             )
             rel = rr[(rr["antecedent"] == sku_pick) | (rr["consequent"] == sku_pick)].copy()
             rel = rel.sort_values(["lift", "confidence", "support"], ascending=False).head(50)
