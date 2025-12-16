@@ -3,20 +3,23 @@ import numpy as np
 import streamlit as st
 import plotly.express as px
 from pathlib import Path
+from typing import Optional
 
-# =========================
-# Page config
-# =========================
+# ============================================================
+# Page configuration
+# ============================================================
 st.set_page_config(
     page_title="Wolfson Brands Dashboard",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# =========================
-# Theme (Auto / Light / Dark)
-#   - Auto: theo nền máy (prefers-color-scheme)
-# =========================
+# ============================================================
+# Theme control (Auto / Light / Dark)
+# - Auto uses CSS prefers-color-scheme for the UI.
+# - For charts, Auto uses Streamlit's theme base as best-effort.
+#   If charts look off, switch to Light/Dark manually.
+# ============================================================
 with st.sidebar.expander("⚙️ Display settings", expanded=False):
     theme_mode = st.selectbox("Theme", ["Auto", "Light", "Dark"], index=0, key="ui_theme_mode")
 
@@ -32,8 +35,7 @@ def _css_tokens_light() -> str:
       --border:#d1d5db;
       --border_soft:#e5e7eb;
       --thead:#f9fafb;
-      --plot_grid: rgba(0,0,0,0.10);
-      --plot_line: rgba(0,0,0,0.55);
+      --pill_bg: rgba(0,0,0,0.03);
     }
     """
 
@@ -49,13 +51,11 @@ def _css_tokens_dark() -> str:
       --border:rgba(255,255,255,0.18);
       --border_soft:rgba(255,255,255,0.12);
       --thead:rgba(255,255,255,0.06);
-      --plot_grid: rgba(255,255,255,0.10);
-      --plot_line: rgba(255,255,255,0.55);
+      --pill_bg: rgba(255,255,255,0.06);
     }
     """
 
-def inject_css(mode: str = "Auto"):
-    # Auto = dùng media query theo nền máy (Windows/macOS/browser)
+def inject_css(mode: str = "Auto") -> None:
     if mode == "Auto":
         tokens = _css_tokens_light() + """
         @media (prefers-color-scheme: dark){
@@ -77,9 +77,10 @@ html, body, [data-testid="stAppViewContainer"], .stApp {{
   background: var(--bg) !important;
   color: var(--text) !important;
 }}
-/* Make sure text is not faded */
+
+/* Ensure text is not "faded" */
 h1,h2,h3,h4,h5,h6, p, span, label, small, div {{
-  color: var(--text);
+  color: var(--text) !important;
   opacity: 1 !important;
 }}
 [data-testid="stMarkdownContainer"] {{
@@ -91,7 +92,7 @@ h1,h2,h3,h4,h5,h6, p, span, label, small, div {{
 #MainMenu {{visibility: hidden;}}
 footer {{visibility: hidden;}}
 
-/* Reduce padding */
+/* Layout padding */
 .block-container {{ padding-top: 1.2rem; padding-bottom: 2rem; }}
 
 /* Sidebar */
@@ -124,7 +125,7 @@ section[data-testid="stSidebar"] * {{
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 6px 10px;
-  background: color-mix(in srgb, var(--card) 80%, transparent);
+  background: var(--pill_bg);
 }}
 
 /* KPI boxes */
@@ -146,13 +147,9 @@ div[data-testid="stTable"] {{
   padding: 10px 12px;
 }}
 
-/* Dataframe: force readable table in both themes */
-div[data-testid="stDataFrame"] * {{
-  color: var(--text) !important;
-}}
-div[data-testid="stDataFrame"] table {{
-  background: var(--card) !important;
-}}
+/* Dataframe: readable in both themes */
+div[data-testid="stDataFrame"] * {{ color: var(--text) !important; }}
+div[data-testid="stDataFrame"] table {{ background: var(--card) !important; }}
 div[data-testid="stDataFrame"] thead tr th {{
   background: var(--thead) !important;
   border-bottom: 1px solid var(--border_soft) !important;
@@ -162,7 +159,7 @@ div[data-testid="stDataFrame"] tbody tr td {{
   border-bottom: 1px solid var(--border_soft) !important;
 }}
 
-/* Selects look clean */
+/* Selects */
 div[data-baseweb="select"] > div {{
   background: var(--card) !important;
   border: 1px solid var(--border) !important;
@@ -170,7 +167,7 @@ div[data-baseweb="select"] > div {{
 }}
 div[data-baseweb="select"] * {{ color: var(--text) !important; }}
 
-/* Tabs polish */
+/* Tabs */
 button[data-baseweb="tab"] {{
   font-size: 14px !important;
   padding: 10px 12px !important;
@@ -186,9 +183,9 @@ button[data-baseweb="tab"] * {{
 
 inject_css(theme_mode)
 
-# =========================
+# ============================================================
 # Plotly styling
-# =========================
+# ============================================================
 PLOTLY_CONFIG = {"displayModeBar": False, "responsive": True}
 
 def get_is_dark(mode: str) -> bool:
@@ -196,27 +193,30 @@ def get_is_dark(mode: str) -> bool:
         return True
     if mode == "Light":
         return False
-    # Auto: best-effort follow Streamlit theme base if set, otherwise light
+    # Auto: best-effort based on Streamlit theme base (may be None)
     base = (st.get_option("theme.base") or "light").lower()
     return base == "dark"
 
 IS_DARK = get_is_dark(theme_mode)
 
-def style_fig(fig, title: str | None = None):
-    # theme colors
+def style_fig(fig, title: Optional[str] = None):
+    """
+    Apply a clean, professional style that works across Plotly versions.
+    Fixes Plotly v6+ compatibility (title_font vs titlefont).
+    """
     if IS_DARK:
         template = "plotly_dark"
         paper = "#0f172a"
         plot = "#0f172a"
         font = "#e5e7eb"
-        line = "rgba(255,255,255,0.55)"
+        axis_line = "rgba(255,255,255,0.55)"
         grid = "rgba(255,255,255,0.10)"
     else:
         template = "plotly_white"
         paper = "white"
         plot = "white"
         font = "#111827"
-        line = "rgba(0,0,0,0.55)"
+        axis_line = "rgba(0,0,0,0.55)"
         grid = "rgba(0,0,0,0.10)"
 
     fig.update_layout(
@@ -232,7 +232,7 @@ def style_fig(fig, title: str | None = None):
     common_axis = dict(
         showline=True,
         linewidth=1.1,
-        linecolor=line,
+        linecolor=axis_line,
         mirror=True,
         ticks="outside",
         ticklen=4,
@@ -243,7 +243,7 @@ def style_fig(fig, title: str | None = None):
         tickfont=dict(color=font),
     )
 
-    # ✅ Plotly mới dùng title_font, Plotly cũ dùng titlefont
+    # Plotly v6+ uses title_font; older uses titlefont
     try:
         fig.update_xaxes(**common_axis, title_font=dict(color=font))
         fig.update_yaxes(**common_axis, title_font=dict(color=font))
@@ -253,39 +253,38 @@ def style_fig(fig, title: str | None = None):
 
     return fig
 
-
-# =========================
+# ============================================================
 # Paths + loaders
-# =========================
+# ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 
 @st.cache_data(show_spinner=False)
-def read_csv_cached(name: str):
+def read_csv_cached(name: str) -> pd.DataFrame:
     return pd.read_csv(BASE_DIR / name)
 
-def load_optional(name: str):
+def load_optional(name: str) -> Optional[pd.DataFrame]:
     p = BASE_DIR / name
     if not p.exists():
         return None
     return read_csv_cached(name)
 
-# =========================
+# ============================================================
 # Load core data
-# =========================
+# ============================================================
 df = load_optional("monthly_aggregates.csv")
 if df is None:
-    st.error("Không tìm thấy monthly_aggregates.csv trong cùng thư mục với app.")
+    st.error("monthly_aggregates.csv was not found in the same folder as this app file.")
     st.stop()
 
-# =========================
-# Sidebar filters (Bảng điều khiển)
-# =========================
-st.sidebar.header("Bảng điều khiển (Filters)")
-st.sidebar.caption("Nếu sidebar bị ẩn: bấm nút `>` ở góc trên trái để mở lại.")
+# ============================================================
+# Sidebar filters
+# ============================================================
+st.sidebar.header("Control Panel (Filters)")
+st.sidebar.caption("If the sidebar is hidden, click the `>` button in the top-left corner to reopen it.")
 
 year_months = sorted(df["YearMonth"].dropna().unique().tolist()) if "YearMonth" in df.columns else []
 if not year_months:
-    st.error("Cột YearMonth rỗng hoặc không tồn tại trong monthly_aggregates.csv")
+    st.error("Column `YearMonth` is missing or empty in monthly_aggregates.csv.")
     st.stop()
 
 ym_from, ym_to = st.sidebar.select_slider(
@@ -295,7 +294,7 @@ ym_from, ym_to = st.sidebar.select_slider(
     key="flt_yearmonth",
 )
 
-def multiselect(col, label, key):
+def multiselect(col: str, label: str, key: str):
     if col not in df.columns:
         return []
     opts = sorted([x for x in df[col].dropna().unique().tolist()])
@@ -321,9 +320,9 @@ for col, sel in [
 if has_coupon != "All" and "has_coupon" in f.columns:
     f = f[f["has_coupon"] == has_coupon]
 
-# =========================
+# ============================================================
 # Report header
-# =========================
+# ============================================================
 st.markdown(
     f"""
 <div class="report-header">
@@ -340,15 +339,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# =========================
+# ============================================================
 # KPI helpers
-# =========================
-def kpi_sum(col):
+# ============================================================
+def kpi_sum(col: str) -> float:
     if col not in f.columns:
         return np.nan
     return float(np.nansum(f[col].to_numpy()))
 
-def kpi_div(n, d):
+def kpi_div(n: float, d: float) -> float:
     return float(n / d) if d else np.nan
 
 orders = int(np.nansum(f["orders"].to_numpy())) if "orders" in f.columns else 0
@@ -365,14 +364,14 @@ coupon_orders = (
 )
 coupon_usage = kpi_div(coupon_orders, orders)
 
-# =========================
+# ============================================================
 # Tabs
-# =========================
+# ============================================================
 tabs = st.tabs(
     [
         "Executive Overview",
         "Revenue Drivers",
-        "Promotion & Coupons",
+        "Promotions & Coupons",
         "Customer (RFM)",
         "Products & Basket",
         "Data Quality",
@@ -411,7 +410,7 @@ with tabs[0]:
             fig = style_fig(px.bar(top_brand, x="Brands", y="net_revenue"), "Top 10 Brands (Net Revenue)")
             st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t0_bar_top_brand")
         else:
-            st.info("Thiếu cột Brands trong monthly_aggregates.csv")
+            st.info("Column `Brands` is missing in monthly_aggregates.csv.")
 
     with right:
         if "shipping_country" in f.columns:
@@ -424,7 +423,7 @@ with tabs[0]:
             fig = style_fig(px.bar(top_country, x="shipping_country", y="net_revenue"), "Top Countries (Net Revenue)")
             st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t0_bar_top_country")
         else:
-            st.info("Thiếu cột shipping_country trong monthly_aggregates.csv")
+            st.info("Column `shipping_country` is missing in monthly_aggregates.csv.")
 
 # ------------------ TAB 2 ------------------
 with tabs[1]:
@@ -444,13 +443,14 @@ with tabs[1]:
         st.dataframe(pivot, use_container_width=True)
 
     if "campaign_type_clean" in f.columns:
-        by_pay = (
+        by_campaign = (
             f.groupby("campaign_type_clean", as_index=False)
             .agg(net_revenue=("net_revenue_gbp", "sum"))
             .sort_values("net_revenue", ascending=False)
             .head(15)
         )
-        fig = style_fig(px.bar(by_pay, x="campaign_type_clean", y="net_revenue"), "Net Revenue by Campaign Type (Top 15)")
+        fig = style_fig(px.bar(by_campaign, x="campaign_type_clean", y="net_revenue"),
+                        "Net Revenue by Campaign Type (Top 15)")
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t1_bar_netrev_by_campaign")
 
     if "refund_rate" in f.columns:
@@ -459,12 +459,13 @@ with tabs[1]:
             .agg(refund_rate=("refund_rate", "mean"))
             .sort_values("YearMonth")
         )
-        fig = style_fig(px.line(by_ym2, x="YearMonth", y="refund_rate", markers=True), "Refund Rate Trend (by Month)")
+        fig = style_fig(px.line(by_ym2, x="YearMonth", y="refund_rate", markers=True),
+                        "Refund Rate Trend (by Month)")
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t1_line_refund_rate_by_ym")
 
 # ------------------ TAB 3 ------------------
 with tabs[2]:
-    st.subheader("Promotion & Coupon Optimisation")
+    st.subheader("Promotions & Coupon Optimisation")
 
     c1, c2, c3 = st.columns(3)
     net_coupon = (
@@ -489,7 +490,8 @@ with tabs[2]:
             .sort_values("net_revenue", ascending=False)
             .head(15)
         )
-        fig = style_fig(px.bar(top_campaign, x="campaign_type_clean", y="net_revenue"), "Top Campaign Types (Net Revenue)")
+        fig = style_fig(px.bar(top_campaign, x="campaign_type_clean", y="net_revenue"),
+                        "Top Campaign Types (Net Revenue)")
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t2_bar_netrev_by_campaign")
 
     if "has_coupon" in f.columns and "orders" in f.columns:
@@ -507,12 +509,13 @@ with tabs[2]:
             .sort_values("YearMonth")
         )
         usage["coupon_usage"] = usage["coupon_orders"] / usage["orders"].replace(0, np.nan)
-        fig = style_fig(px.line(usage, x="YearMonth", y="coupon_usage", markers=True), "Coupon Usage Rate (by Month)")
+        fig = style_fig(px.line(usage, x="YearMonth", y="coupon_usage", markers=True),
+                        "Coupon Usage Rate (by Month)")
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="t2_line_coupon_usage_by_ym")
 
-# =========================
-# Optional datasets (last 3 tabs)
-# =========================
+# ============================================================
+# Optional datasets (tabs 4-6)
+# ============================================================
 rfm_df = load_optional("rfm_customer_table.csv")
 rfm_targets = load_optional("rfm_target_list.csv")
 sku_summary = load_optional("sku_summary.csv")
@@ -526,7 +529,7 @@ with tabs[3]:
     st.subheader("Customer Intelligence (RFM)")
 
     if rfm_df is None:
-        st.warning("Không load được rfm_customer_table.csv (kiểm tra file có đúng folder với app không).")
+        st.warning("rfm_customer_table.csv was not found (make sure it is in the same folder as the app).")
     else:
         rfm = rfm_df.copy()
         cust_col = "Customer_ID" if "Customer_ID" in rfm.columns else None
@@ -539,14 +542,14 @@ with tabs[3]:
                 "RFM Segment",
                 sorted(rfm[seg_col].dropna().unique().tolist()) if seg_col else [],
                 default=[],
-                key="rfm_seg_sel"
+                key="rfm_seg_sel",
             )
         with cB:
             clu_sel = st.multiselect(
                 "Cluster",
                 sorted(rfm[clu_col].dropna().unique().tolist()) if clu_col else [],
                 default=[],
-                key="rfm_clu_sel"
+                key="rfm_clu_sel",
             )
         with cC:
             rec_rng = None
@@ -581,18 +584,17 @@ with tabs[3]:
                     .agg(customers=(cust_col, "nunique"), monetary=("monetary", "sum"))
                     .sort_values("monetary", ascending=False)
                 )
-                fig = style_fig(px.bar(seg_sum, x=seg_col, y="monetary", hover_data=["customers"]), "Total Monetary by Segment")
+                fig = style_fig(px.bar(seg_sum, x=seg_col, y="monetary", hover_data=["customers"]),
+                                "Total Monetary by Segment")
                 st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="rfm_bar")
 
-        # ✅ REPLACED TREEMAP → STACKED BAR (easier to read)
+        # Replaced treemap with stacked bar (easier to read)
         with right:
             if seg_col and clu_col and cust_col:
                 seg_cluster = (
                     rf.groupby([seg_col, clu_col], as_index=False)
                     .agg(customers=(cust_col, "nunique"))
                 )
-
-                # sort segments by total customers
                 seg_order = (
                     seg_cluster.groupby(seg_col, as_index=False)["customers"]
                     .sum()
@@ -615,7 +617,7 @@ with tabs[3]:
                 fig.update_traces(textposition="inside", insidetextanchor="middle")
                 st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="rfm_seg_cluster_bar")
             else:
-                st.info("Thiếu cột RFM_Segment / kmeans_cluster / Customer_ID trong rfm_customer_table.csv")
+                st.info("Missing required columns for RFM charts (RFM_Segment / kmeans_cluster / Customer_ID).")
 
         if "recency_days" in rf.columns and "monetary" in rf.columns and len(rf) > 0:
             sample = rf.sample(min(len(rf), 5000), random_state=42)
@@ -637,18 +639,19 @@ with tabs[4]:
     st.subheader("Products & Market Basket")
 
     if sku_summary is None or sku_rules is None:
-        st.warning("Thiếu sku_summary.csv hoặc sku_pair_rules_top200.csv")
+        st.warning("sku_summary.csv or sku_pair_rules_top200.csv is missing.")
     else:
         topn = st.slider("Top N SKUs", 10, 50, 20, 5, key="sku_topn")
 
         if "sku" in sku_summary.columns and "revenue_alloc_gbp" in sku_summary.columns:
             top_skus = sku_summary.sort_values("revenue_alloc_gbp", ascending=False).head(topn)
-            fig = style_fig(px.bar(top_skus, x="sku", y="revenue_alloc_gbp"), f"Top {topn} SKUs (Revenue Allocated, GBP)")
+            fig = style_fig(px.bar(top_skus, x="sku", y="revenue_alloc_gbp"),
+                            f"Top {topn} SKUs (Revenue Allocated, GBP)")
             st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key="sku_bar")
             st.dataframe(top_skus, use_container_width=True)
 
-        need = {"antecedent", "consequent", "support", "confidence", "lift", "pair_order_count"}
-        if need.issubset(set(sku_rules.columns)):
+        needed = {"antecedent", "consequent", "support", "confidence", "lift", "pair_order_count"}
+        if needed.issubset(set(sku_rules.columns)):
             c1, c2, c3 = st.columns(3)
             with c1:
                 min_support = st.slider(
