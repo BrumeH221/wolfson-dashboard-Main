@@ -1,0 +1,132 @@
+payment_method
+stripe
+checkout_v2
+Clearpay (New)
+Klarna
+Sezzle Payments
+Clearpay
+Afterpay
+authorize_net_cim_credit_card
+shopify_payments
+Mollie - Credit Card
+Afterpay (New)
+gift_card
+Mollie - SOFORT
+amazon_payments
+mollie_wc_gateway_creditcard
+mollie_wc_gateway_applepay
+wc_luup_copyandpay
+Mollie - Klarna Pay Later.
+sezzlepay
+GBP
+_apple_pay
+credit_card_mollie_
+buy_now_pay_later_with_klarna
+clearpay
+sofort_banking_mollie_
+cartes_bancaires_mollie_
+"Buy Now, Pay Later with Sezzle"
+clearpay_eur
+sezzle
+paypal
+klarna_achteraf_betalen
+"Producto gratis,SALE20"
+wc_moreniche_skrill_quickcheckout_skrill
+creditcard
+pinwheel
+ideal_mollie_
+payer_en_3_fois_sans_frais
+mollie_wc_gateway_sofort
+wc_moreniche_skrill_quickcheckout_paysafecard
+cyber_source
+KOMOJU - Paidy
+KOMOJU - „Ç≥„É≥„Éì„ÉãÊ±∫Ê∏à (Convenience Store)
+KOMOJU - ÈäÄË°åÊåØËæº (Japan Bank Transfer)
+KOMOJU - „Éö„Ç§„Ç∏„ÉºÊ±∫Ê∏à (Pay-Easy)
+Mollie - iDeal
+"shopify_payments,paypal"
+Stripe Card Payments
+"shopify_payments,Sezzle Payments"
+Mollie - Klarna Pay Later
+"Sezzle Payments,shopify_payments"
+"stripe,Afterpay"
+"paypal,shopify_payments"
+"cyber_source,Afterpay (New)"
+"Klarna,stripe"
+"shopify_payments,Klarna"
+"Afterpay,shopify_payments"
+"shopify_payments,Clearpay"
+"shopify_payments,Afterpay (New)"
+Checkout.com - Onsite Payments
+"cyber_source,paypal"
+"Mollie - Klarna Pay Later.,paypal"
+"stripe,Mollie - Klarna Pay Later"
+"stripe,Afterpay (New)"
+"Afterpay (New),paypal"
+"paypal,Stripe Card Payments"
+"Klarna,shopify_payments"
+"stripe,paypal"
+"Stripe Card Payments,paypal"
+"stripe,Clearpay (New)"
+"Afterpay,paypal"
+"shopify_payments,Cash App Pay"
+"stripe,Klarna"
+"shopify_payments,Afterpay"
+"checkout_v2,paypal"
+"Afterpay (New),shopify_payments,paypal"
+"Klarna,gift_card"
+"cyber_source,Afterpay"
+"gift_card,stripe"
+"cyber_source,Sezzle Payments"
+"stripe,Sezzle Payments"
+"Afterpay,stripe"
+"cyber_source,stripe"
+"Afterpay,Cash App Pay"
+Cash App Pay
+"stripe,Cash App Pay"
+"gift_card,shopify_payments"
+"Klarna,Afterpay"
+"Sezzle Payments,stripe"
+Super Payments
+"stripe,Super Payments"
+"Afterpay,Sezzle Payments"
+"Afterpay,Klarna"
+Mollie - SEPA Bank Transfer
+"Clearpay (New),stripe"
+"Mollie - SEPA Bank Transfer,stripe"
+"stripe,Mollie - Klarna Pay Later."
+"gift_card,paypal"
+"paypal,stripe"
+"shopify_payments,Super Payments"
+"Klarna,Cash App Pay"
+Mollie - Klarna
+"Mollie - Klarna Pay Later.,stripe"
+"Sezzle Payments,Afterpay"
+"cyber_source,Klarna"
+"Afterpay (New),cyber_source"
+"Checkout.com - Onsite Payments,Mollie - Credit Car"
+"Mollie - Credit Card,Checkout.com - Onsite Payment"
+"paypal,Cash App Pay"
+"shopify_payments,Mollie - Klarna Pay Later"
+"Checkout.com - Onsite Payments,Mollie - Klarna"
+"checkout_v2,Afterpay (New)"
+"paypal,Afterpay"
+"paypal,Klarna"
+"Afterpay (New),shopify_payments"
+"paypal,checkout_v2"
+"paypal,Afterpay (New)"
+"Afterpay (New),checkout_v2"
+"shopify_payments,amazon_payments"
+"paypal,cyber_source"
+"Afterpay,cyber_source"
+"Checkout.com - Onsite Payments,paypal"
+"Checkout.com - Onsite Payments,cyber_source"
+"paypal,Checkout.com - Onsite Payments"
+"Sezzle Payments,paypal"
+"stripe,shopify_payments"
+"shopify_payments,KOMOJU - „Ç≥„É≥„Éì„ÉãÊ±∫Ê∏à (Convenience Stor"
+"Clearpay,shopify_payments"
+"Sezzle Payments,cyber_source"
+"shopify_payments,Mollie - Klarna Pay Later."
+"Afterpay,gift_card"
+"Afterpay (New),stripe"

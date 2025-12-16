@@ -1,0 +1,5 @@
+Year,orders_total,orders_has_coupon,orders_has_coupon_with_code,coupon_code_coverage_pct
+2021,1720,1136,1136,100.0
+2022,377671,237512,237512,100.0
+2023,440373,242477,242477,100.0
+2024,188864,97497,97497,100.0

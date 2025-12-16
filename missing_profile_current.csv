@@ -1,0 +1,60 @@
+column_name,missing_count,missing_pct
+expires,969273,96.09816503210301
+GEOS,965758,95.74967183143835
+valid_from,961888,95.36598230467526
+coupon_brand,948409,94.02961250332135
+campaign_type,948409,94.02961250332135
+coupon_target_segment,948409,94.02961250332135
+campaign_category,948409,94.02961250332135
+Repeat Oders Qty,788252,78.1509139147436
+Month&Curr,633666,62.824549784459684
+coupon_code,430006,42.63276450782647
+Customer_ID,374963,37.17554936012088
+shipping_postcode,374963,37.17554936012088
+New/ Repeat Customer,374962,37.175450215540316
+order subtotal,374962,37.175450215540316
+postage revenue,374962,37.175450215540316
+order subtotal (GBP),374962,37.175450215540316
+postage revenue (GBP),374962,37.175450215540316
+products_skus,2,0.00019828916111787497
+products_qty,2,0.00019828916111787497
+VAT State,1,9.914458055893748e-05
+shipping_country,1,9.914458055893748e-05
+Company,1,9.914458055893748e-05
+Brands,1,9.914458055893748e-05
+Net sale less refund (GBP),0,0.0
+boss_order_id,0,0.0
+Order Total (GBP),0,0.0
+Gross Sale less refund (GBP),0,0.0
+Refund (GBP),0,0.0
+net_revenue_gbp,0,0.0
+Discount_rate,0,0.0
+Discount (%),0,0.0
+has_coupon,0,0.0
+campaign_type_clean,0,0.0
+Sales tax less refund (GBP),0,0.0
+Sales Tax (GBP),0,0.0
+Net Refund (GBP),0,0.0
+Refund Sales Tax (GBP),0,0.0
+order_date,0,0.0
+order_time,0,0.0
+completed_date,0,0.0
+completed_time,0,0.0
+Month,0,0.0
+Year,0,0.0
+shop,0,0.0
+shop_order_id,0,0.0
+status,0,0.0
+shipper_id,0,0.0
+shipping_state,0,0.0
+order_total,0,0.0
+order_currency,0,0.0
+payment_method,0,0.0
+refunded_amount,0,0.0
+VAT State 2,0,0.0
+VAT Rate,0,0.0
+Exchange Rate,0,0.0
+Gross Sale (GBP),0,0.0
+Net Sale (GBP),0,0.0
+Gross Refund (GBP),0,0.0
+order_date_dt,0,0.0
