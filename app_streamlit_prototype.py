@@ -203,6 +203,7 @@ def get_is_dark(mode: str) -> bool:
 IS_DARK = get_is_dark(theme_mode)
 
 def style_fig(fig, title: str | None = None):
+    # theme colors
     if IS_DARK:
         template = "plotly_dark"
         paper = "#0f172a"
@@ -227,21 +228,31 @@ def style_fig(fig, title: str | None = None):
         font=dict(size=13, color=font),
         legend=dict(title=None),
     )
-    fig.update_xaxes(
-        showline=True, linewidth=1.1, linecolor=line, mirror=True,
-        ticks="outside", ticklen=4, tickwidth=1,
-        showgrid=True, gridwidth=0.7, gridcolor=grid,
+
+    common_axis = dict(
+        showline=True,
+        linewidth=1.1,
+        linecolor=line,
+        mirror=True,
+        ticks="outside",
+        ticklen=4,
+        tickwidth=1,
+        showgrid=True,
+        gridwidth=0.7,
+        gridcolor=grid,
         tickfont=dict(color=font),
-        titlefont=dict(color=font),
     )
-    fig.update_yaxes(
-        showline=True, linewidth=1.1, linecolor=line, mirror=True,
-        ticks="outside", ticklen=4, tickwidth=1,
-        showgrid=True, gridwidth=0.7, gridcolor=grid,
-        tickfont=dict(color=font),
-        titlefont=dict(color=font),
-    )
+
+    # ✅ Plotly mới dùng title_font, Plotly cũ dùng titlefont
+    try:
+        fig.update_xaxes(**common_axis, title_font=dict(color=font))
+        fig.update_yaxes(**common_axis, title_font=dict(color=font))
+    except Exception:
+        fig.update_xaxes(**common_axis, titlefont=dict(color=font))
+        fig.update_yaxes(**common_axis, titlefont=dict(color=font))
+
     return fig
+
 
 # =========================
 # Paths + loaders
