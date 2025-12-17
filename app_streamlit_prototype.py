@@ -271,6 +271,11 @@ def load_optional(name: str) -> Optional[pd.DataFrame]:
 # ============================================================
 # Load core data
 # ============================================================
+df = load_optional("monthly_aggregates.csv")
+if df is None:
+    st.error("Không tìm thấy monthly_aggregates.csv trong cùng thư mục với app_streamlit_prototype.py")
+    st.stop()
+
 if "campaign_type_clean" in df.columns:
     df["campaign_type_clean"] = (
         df["campaign_type_clean"]
