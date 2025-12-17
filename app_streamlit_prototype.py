@@ -271,10 +271,14 @@ def load_optional(name: str) -> Optional[pd.DataFrame]:
 # ============================================================
 # Load core data
 # ============================================================
-df = load_optional("monthly_aggregates.csv")
-if df is None:
-    st.error("monthly_aggregates.csv was not found in the same folder as this app file.")
-    st.stop()
+if "campaign_type_clean" in df.columns:
+    df["campaign_type_clean"] = (
+        df["campaign_type_clean"]
+        .astype("string")
+        .str.strip()
+        .str.replace(r"(?i)^no coupon$", "No campaign", regex=True)
+    )
+
 
 # ============================================================
 # Sidebar filters
